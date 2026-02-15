@@ -1,5 +1,5 @@
 // Configuration
-const WEBSOCKET_URL = 'https://uusedtocallme.netlify.app/';
+const WEBSOCKET_URL = 'https://calls-bfwc.onrender.com';
 const ICE_SERVERS = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
