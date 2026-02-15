@@ -243,11 +243,14 @@ function createPeerConnection() {
 
   console.log('Creating peer connection');
   peerConnection = new RTCPeerConnection(ICE_SERVERS);
+  
+  // Create a MediaStream for remote tracks
+  let remoteStream = new MediaStream();
 
   // Add local stream tracks to peer connection
   localStream.getTracks().forEach(track => {
     peerConnection.addTrack(track, localStream);
-    console.log('Added local track:', track.kind);
+    console.log('Added local track:', track.kind, 'enabled:', track.enabled, 'readyState:', track.readyState);
   });
 
   // Handle ICE candidates
@@ -265,12 +268,26 @@ function createPeerConnection() {
   // Handle remote stream
   peerConnection.ontrack = (event) => {
     console.log('Received remote track:', event.track.kind);
+    console.log('Track streams:', event.streams.length);
     
-    if (!remoteVideo.srcObject) {
-      remoteVideo.srcObject = event.streams[0];
+    if (event.streams && event.streams[0]) {
+      if (!remoteVideo.srcObject) {
+        console.log('Setting remote video stream');
+        remoteVideo.srcObject = event.streams[0];
+        waitingMessage.style.display = 'none';
+        updateStatus('Connected');
+      } else if (remoteVideo.srcObject !== event.streams[0]) {
+        console.log('Updating remote video stream');
+        remoteVideo.srcObject = event.streams[0];
+      }
+      console.log('Remote stream set successfully');
+    } else {
+      // Fallback: manually add tracks to stream
+      console.log('Using fallback stream method');
+      remoteStream.addTrack(event.track);
+      remoteVideo.srcObject = remoteStream;
       waitingMessage.style.display = 'none';
       updateStatus('Connected');
-      console.log('Remote stream set');
     }
   };
 
@@ -281,12 +298,14 @@ function createPeerConnection() {
     switch (peerConnection.connectionState) {
       case 'connected':
         updateStatus('Connected');
+        console.log('Peer connection established successfully');
         break;
       case 'disconnected':
         updateStatus('Disconnected');
         break;
       case 'failed':
         updateStatus('Connection failed');
+        console.error('Peer connection failed');
         break;
       case 'closed':
         updateStatus('Connection closed');
@@ -297,6 +316,15 @@ function createPeerConnection() {
   // Handle ICE connection state changes
   peerConnection.oniceconnectionstatechange = () => {
     console.log('ICE connection state:', peerConnection.iceConnectionState);
+    
+    if (peerConnection.iceConnectionState === 'failed') {
+      updateStatus('Connection failed. Try refreshing the page.');
+    }
+  };
+  
+  // Handle ICE gathering state
+  peerConnection.onicegatheringstatechange = () => {
+    console.log('ICE gathering state:', peerConnection.iceGatheringState);
   };
 }
 
