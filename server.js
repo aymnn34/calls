@@ -45,6 +45,12 @@ wss.on('connection', (ws) => {
 
   function handleJoin(ws, data) {
     const { room, id } = data;
+    
+    // If client is already in a room, handle it
+    if (currentRoom && currentRoom !== room) {
+      handleLeave();
+    }
+    
     currentRoom = room;
     clientId = id;
 
@@ -54,6 +60,30 @@ wss.on('connection', (ws) => {
     }
 
     const roomParticipants = rooms.get(room);
+
+    // Check if this client is already in the room (reconnection)
+    if (roomParticipants.has(id)) {
+      console.log(`Client ${id} is reconnecting to room ${room}`);
+      roomParticipants.set(id, ws);
+      
+      // Notify about reconnection
+      ws.send(JSON.stringify({
+        type: 'joined',
+        room: room,
+        id: id
+      }));
+      
+      // Notify other participant about reconnection
+      roomParticipants.forEach((participantWs, participantId) => {
+        if (participantId !== id && participantWs.readyState === WebSocket.OPEN) {
+          participantWs.send(JSON.stringify({
+            type: 'peer-joined',
+            peerId: id
+          }));
+        }
+      });
+      return;
+    }
 
     // Check if room already has 2 participants
     if (roomParticipants.size >= 2) {
