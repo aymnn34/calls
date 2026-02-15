@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebRTC Video Call</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Room Join Section -->
+    <div id="join-section" class="section">
+      <div class="card">
+        <h1>WebRTC Video Call</h1>
+        <p class="subtitle">Join a room to start video calling</p>
+        
+        <div class="input-group">
+          <label for="room-input">Room Name</label>
+          <input 
+            type="text" 
+            id="room-input" 
+            placeholder="Enter room name (e.g., room123)"
+            autocomplete="off"
+          >
+        </div>
+
+        <div class="input-group">
+          <label for="name-input">Your Name</label>
+          <input 
+            type="text" 
+            id="name-input" 
+            placeholder="Enter your name"
+            autocomplete="off"
+          >
+        </div>
+
+        <button id="join-btn" class="btn btn-primary">Join Room</button>
+        
+        <div id="join-error" class="error-message"></div>
+      </div>
+    </div>
+
+    <!-- Video Call Section -->
+    <div id="call-section" class="section hidden">
+      <div class="header">
+        <div class="room-info">
+          <span class="room-label">Room:</span>
+          <span id="current-room" class="room-name"></span>
+        </div>
+        <button id="leave-btn" class="btn btn-danger">Leave Call</button>
+      </div>
+
+      <div class="video-container">
+        <!-- Remote Video (Main) -->
+        <div class="video-wrapper remote-video-wrapper">
+          <video id="remote-video" autoplay playsinline></video>
+          <div id="waiting-message" class="waiting-message">
+            <div class="spinner"></div>
+            <p>Waiting for another participant to join...</p>
+          </div>
+          <div class="video-label">Remote</div>
+        </div>
+
+        <!-- Local Video (Picture-in-Picture) -->
+        <div class="video-wrapper local-video-wrapper">
+          <video id="local-video" autoplay playsinline muted></video>
+          <div class="video-label">You</div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button id="toggle-video" class="control-btn" title="Toggle Video">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
+          </svg>
+        </button>
+
+        <button id="toggle-audio" class="control-btn" title="Toggle Audio">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+          </svg>
+        </button>
+      </div>
+
+      <div id="connection-status" class="status-message"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
