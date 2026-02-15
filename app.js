@@ -1,5 +1,5 @@
 // Configuration
-const WEBSOCKET_URL = 'https://calls-bfwc.onrender.com/';
+const WEBSOCKET_URL = 'ws://localhost:8080';
 const ICE_SERVERS = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
@@ -206,7 +206,14 @@ async function handlePeerJoined(data) {
   console.log('Peer joined:', data.peerId);
   updateStatus('Peer joined. Establishing connection...');
   
-  // Create peer connection
+  // Close existing peer connection if any
+  if (peerConnection) {
+    console.log('Closing existing peer connection');
+    peerConnection.close();
+    peerConnection = null;
+  }
+  
+  // Create new peer connection
   createPeerConnection();
   
   // Create and send offer
@@ -301,6 +308,14 @@ async function handleOffer(data) {
   if (!peerConnection) {
     createPeerConnection();
   }
+  
+  // If peer connection is in wrong state, reset it
+  if (peerConnection.signalingState !== 'stable' && peerConnection.signalingState !== 'have-local-offer') {
+    console.log('Peer connection in wrong state, resetting...');
+    peerConnection.close();
+    peerConnection = null;
+    createPeerConnection();
+  }
 
   try {
     await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
@@ -319,6 +334,7 @@ async function handleOffer(data) {
     console.log('Answer sent');
   } catch (error) {
     console.error('Error handling offer:', error);
+    updateStatus('Failed to establish connection. Try refreshing.');
   }
 }
 
@@ -326,11 +342,23 @@ async function handleOffer(data) {
 async function handleAnswer(data) {
   console.log('Received answer');
   
+  if (!peerConnection) {
+    console.error('No peer connection exists');
+    return;
+  }
+  
+  // Only set remote description if we're expecting an answer
+  if (peerConnection.signalingState !== 'have-local-offer') {
+    console.log('Not expecting answer, current state:', peerConnection.signalingState);
+    return;
+  }
+  
   try {
     await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
     console.log('Remote description set (answer)');
   } catch (error) {
     console.error('Error handling answer:', error);
+    updateStatus('Connection error. Try refreshing the page.');
   }
 }
 
@@ -338,13 +366,21 @@ async function handleAnswer(data) {
 async function handleIceCandidate(data) {
   console.log('Received ICE candidate');
   
-  if (peerConnection) {
+  if (!peerConnection) {
+    console.log('No peer connection yet, ignoring ICE candidate');
+    return;
+  }
+  
+  // Only add ICE candidates after remote description is set
+  if (peerConnection.remoteDescription) {
     try {
       await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
       console.log('ICE candidate added');
     } catch (error) {
       console.error('Error adding ICE candidate:', error);
     }
+  } else {
+    console.log('Remote description not set yet, ignoring ICE candidate');
   }
 }
 
